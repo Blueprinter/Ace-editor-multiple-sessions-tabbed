@@ -1,5 +1,5 @@
 # Ace-editor-multiple-sessions-tabbed
-Example of loading multiple code editor sessions using the Ace Code editor - Implemented in Google Apps Script Web App
+Example of loading multiple code editor sessions using the Ace Code editor - Implemented in a Google Apps Script Web App
 
 This example shows the Ace code editor being used to load multiple files,
 and create multiple editor sessions that the user can open and close
