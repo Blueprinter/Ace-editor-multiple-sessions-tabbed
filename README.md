@@ -16,3 +16,8 @@ This example is basic.
 It does not include a way to close tabs, and end a code editor session.
 It does not include a way to upload files from a different Apps Script project file.
 The focus is on how to create a new Ace code editor session and associate that session with a certain tab.
+
+To create a working example from this code you need a Google account, and you must create an Apps Script file.
+Then publish the Apps Script file as a Web App.
+https://script.google.com/
+
