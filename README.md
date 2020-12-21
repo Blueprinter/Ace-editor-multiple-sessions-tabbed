@@ -21,3 +21,6 @@ To create a working example from this code you need a Google account, and you mu
 Then publish the Apps Script file as a Web App.
 https://script.google.com/
 
+The code for the Ace code editor is loaded from a JavaScript library from cloudflare CDN.
+Note - to load the ace code editor code you can visit 
+https://cdnjs.com/libraries/ace
