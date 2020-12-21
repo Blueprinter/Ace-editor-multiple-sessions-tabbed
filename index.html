@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+  <!-- Note - to load the ace code editor code you can visit https://cdnjs.com/libraries/ace -->
+    <?!= loadCSS_(['CSS_W3_Base','CSS_Ace']) ?>
+    
+<script>
+
+(function(){
+  var i;
+  
+  /*
+    This function is to set GLOBALS
+    This IIFE runs automatically and sets the globals
+  */
+  
+  /*IMPORTANT - 
+    Global variables can cause a fatal error during the parsing of the JavaScript before the code is even run-
+    If that happens then your code will never run -
+    So setting the globals correctly is extremely important - 
+  */
+
+  //console.log('IIFE 29','ran')
+
+  if (!window.$aWellsSets) {
+    window.$aWellsSets = {};
+  }
+  //Many JS files need the object AlanWells to set functions when the original HTML loads
+  if (!window.AlanWells){
+    window.AlanWells = {};
+    window.AlanWells.thisAppName = "App Name Here";//THIS MUST BE AFTER AlanWells is defined!!!
+  }
+   
+})();
+
+</script>
+    
+ </head>
+
+<body>
+  <br/>
+  
+  <div class="w3-container">
+    <button onclick="AlanWells.openNewFile({'fileName':'Code.gs'})">Open JavaScript file</button>
+    <button onclick="AlanWells.openNewFile({'fileName':'CSS_Ace.html'})">Open CSS file</button>
+  </div>
+  
+  <br/>
+  
+  <div id="idInnerDivCenter" class="w3-container">
+    <div id="idEditorTabs" class="w3-bar">
+      <a class="w3-bar-item w3-button w3-padding-small" name="editorTab1" onclick="AlanWells.tabNavgashun({'tabName':this.name})">Tab 1</a>
+    </div>
+  </div>
+
+  <div class="editor-container">
+
+    <div id="editor" class="editor active">
+    </div>
+    
+  </div>
+  
+  <script>
+    function cl(a,b) {
+      if (typeof b === 'object') {
+        b = JSON.stringify(b);
+      
+      }
+      
+      console.log(a + ":" + b);
+    }
+
+    window.$aWellsSets.allOpenFiles = [];
+    
+    window.createNewEditSession = function(fileContent) {
+    try{
+      var elmt,fileType,map,mode,nameOfFile;
+      var h,howManyTabs,newName,newSessionDocument;
+
+      //cl('fileContent 111',fileContent)
+
+      if (!fileContent) {
+        fileContent = "No file content";
+      }
+          
+      //cl('fileContent 115',fileContent)
+      
+      nameOfFile = $aWellsSets.fileName;
+      fileType = nameOfFile.slice(nameOfFile.indexOf(".")+1);
+      cl('fileType',fileType)
+      
+      map = {
+        "gs":'ace/mode/javascript',
+        "html":'ace/mode/html',
+        "json":'ace/mode/json',
+      }
+
+      mode = map[fileType];
+      //cl("mode 127",mode)
+      
+      if (!mode) {
+        alert('mode error - check file name extension');
+        return;
+      }
+      
+      howManyTabs = window.$aWellsSets.allOpenFiles ? window.$aWellsSets.allOpenFiles.length : 0;//This MUST BE before the new session is added to the array
+      cl('howManyTabs 143',howManyTabs)
+      
+      var editor = ace.edit("editor");
+      newSessionDocument = new ace.EditSession(fileContent);
+      editor.setSession(newSessionDocument);
+      //cl('newSessionDocument 136',newSessionDocument)
+      
+      newSessionDocument.setMode(mode);
+      window.$aWellsSets.allOpenFiles.push({"name":nameOfFile,"session":newSessionDocument});
+
+      newName = 'editorTab' + howManyTabs.toString();
+      
+      h = '<a class="w3-bar-item w3-button w3-padding-small" name="' + newName + '" onclick="AlanWells.tabNavgashun({tabName:this.name})">' + nameOfFile + '</a>';
+      
+      elmt = document.getElementById('idEditorTabs');
+      
+      if (howManyTabs > 0) {
+        elmt.insertAdjacentHTML("beforeend", h);
+        //zq('inAdj','idEditorTabs',h);//Add the new tab html to the end
+      } else {
+        elmt.innerHTML = h;
+        //zq('inHtml','idEditorTabs',h);//Replace all html in the tab bar
+      }
+      
+      AlanWells.tabNavgashun({"tabName":newName,"setSession":false});
+
+    }catch(e){
+      cl('Error in fnk createNewEditSession',e.message)
+      
+    }
+    }
+    
+    window.AlanWells.openNewFile = function(po) {
+      var i,izItAlreadyOpen,L;
+      
+      cl('po',po)
+      
+      if (!po.fileName) {
+        alert('No file name');
+        return;
+      }
+      
+      if (po.fileName.indexOf(".") === -1) {
+        alert('No extension in the file name');
+        return;
+      }
+      
+      L = $aWellsSets.allOpenFiles.length;
+      
+      for (i=0;i<L;i++) {
+        cl('$aWellsSets.allOpenFiles[i].name',$aWellsSets.allOpenFiles[i].name)
+        
+        if ($aWellsSets.allOpenFiles[i].name === po.fileName) {
+          izItAlreadyOpen = true;
+          break;
+        }
+      }
+      
+      if (izItAlreadyOpen) {
+        alert('This file is already open');
+        return;
+      }
+
+      $aWellsSets.fileName = po.fileName;
+      
+      //cl('$aWellsSets',$aWellsSets)
+      
+      google.script.run
+        .withSuccessHandler (createNewEditSession)
+        .getTheFileContent(po);//Call the server to get the file content 
+    }
+    
+    window.onload = function () {
+      var editor = ace.edit("editor");
+    }
+    
+    window.AlanWells.tabNavgashun = function(po) {
+      var dx,sessionToShow;
+      
+      /*
+        {"tabName":newName,"setSession":false}
+      
+      */
+      
+      cl('po.tabName 174',po.tabName)
+      
+      if (!po.tabName) {
+        alert('no tab name');
+        return;
+      }
+      
+      var editor = ace.edit("editor");
+      
+      dx = po.tabName.slice(-1);
+      cl('dx',dx)
+      
+      if (po.setSession !== false) {
+        sessionToShow = window.$aWellsSets.allOpenFiles[dx].session;
+        //add the active class to the new tab and delete from any other tabs
+      
+        editor.setSession(sessionToShow);
+      }
+      
+      return;
+      
+      const lastSelectedTab = document.getElementsByClassName('editor-tab--active');
+      
+      for (let i = 0; i < lastSelectedTab.length; i += 1) {
+        lastSelectedTab[i].classList.remove('editor-tab--active');
+      }
+
+      const tab = document.getElementsByName(tabName)[0];//There is only one element by this name
+      tab.classList.add('editor-tab--active');
+      
+    }
+  
+  </script>
+</body>
+
+</html>
+
+
