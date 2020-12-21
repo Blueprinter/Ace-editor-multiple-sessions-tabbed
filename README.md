@@ -11,3 +11,8 @@ The code editor is started, and then content is loaded into the code editor
 by clicking a button, much the same way that you would load a file into the code editor.
 When a second file is loaded, a second tab is created, but both sessions are still active
 even though only one will be displayed at a time.
+
+This example is basic.
+It does not include a way to close tabs, and end a code editor session.
+It does not include a way to upload files from a different Apps Script project file.
+The focus is on how to create a new Ace code editor session and associate that session with a certain tab.
