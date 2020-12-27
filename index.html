@@ -3,9 +3,10 @@
 
 <head>
   <meta charset="utf-8">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.9/ace.js"></script><!-- to get an integrity attribute visit the ace libraries at the link below -->
   <!-- Note - to load the ace code editor code you can visit https://cdnjs.com/libraries/ace -->
-    <?!= loadCSS_(['CSS_W3_Base','CSS_Ace']) ?>
+
+    <?!= loadCSS_(['CSS_W3','CSS_Ace']) ?>
     
 <script>
 
@@ -27,13 +28,15 @@
 
   if (!window.$aWellsSets) {
     window.$aWellsSets = {};
+    $aWellsSets.DOM_Elmt_To_Hold_Editor = "editor";//The name of the HTML ID
+    window.$aWellsSets.allOpenFiles = [];
   }
   //Many JS files need the object AlanWells to set functions when the original HTML loads
   if (!window.AlanWells){
     window.AlanWells = {};
     window.AlanWells.thisAppName = "App Name Here";//THIS MUST BE AFTER AlanWells is defined!!!
   }
-   
+
 })();
 
 </script>
@@ -46,6 +49,9 @@
   <div class="w3-container">
     <button onclick="AlanWells.openNewFile({'fileName':'Code.gs'})">Open JavaScript file</button>
     <button onclick="AlanWells.openNewFile({'fileName':'CSS_Ace.html'})">Open CSS file</button>
+    <button onclick="AlanWells.undo()">Undo</button>
+    <button onclick="AlanWells.redo()">Redo</button>
+    
   </div>
   
   <br/>
@@ -71,11 +77,9 @@
       }
       
       console.log(a + ":" + b);
-    }
-
-    window.$aWellsSets.allOpenFiles = [];
+    }    
     
-    window.createNewEditSession = function(fileContent) {
+    window.AlanWells.mkNewSession = function(fileContent) {
     try{
       var elmt,fileType,map,mode,nameOfFile;
       var h,howManyTabs,newName,newSessionDocument;
@@ -86,7 +90,7 @@
         fileContent = "No file content";
       }
           
-      //cl('fileContent 115',fileContent)
+      //cl('fileContent 93',fileContent)
       
       nameOfFile = $aWellsSets.fileName;
       fileType = nameOfFile.slice(nameOfFile.indexOf(".")+1);
@@ -99,22 +103,26 @@
       }
 
       mode = map[fileType];
-      //cl("mode 127",mode)
+      //cl("mode 106",mode)
       
       if (!mode) {
         alert('mode error - check file name extension');
         return;
       }
       
-      howManyTabs = window.$aWellsSets.allOpenFiles ? window.$aWellsSets.allOpenFiles.length : 0;//This MUST BE before the new session is added to the array
-      cl('howManyTabs 143',howManyTabs)
+      howManyTabs = window.$aWellsSets.allOpenFiles.length;//This MUST BE before the new session is added to the array
+      cl('howManyTabs 114',howManyTabs)
       
-      var editor = ace.edit("editor");
-      newSessionDocument = new ace.EditSession(fileContent);
-      editor.setSession(newSessionDocument);
-      //cl('newSessionDocument 136',newSessionDocument)
+      if (howManyTabs === 0) {//No sessions have been added to the array - but there is the default one already created
+        newSessionDocument = window.ACE_edtr.getSession();//Gets the original EditSession but put it into the newSessionDocument var
+        ACE_edtr.setValue(fileContent);//Replace the current code with the retrieved code 
+        window.ACE_edtr.session.setMode(mode);//Might need to be set to a different mode
+      } else {
+        newSessionDocument = ace.createEditSession(fileContent,mode);//Creates a new Edit Session and sets up undoManager for it - see: https://stackoverflow.com/a/19063775/2946873
+        window.ACE_edtr.setSession(newSessionDocument);//Set the active session to the new session
+        //cl('newSessionDocument 123',newSessionDocument)
+      }
       
-      newSessionDocument.setMode(mode);
       window.$aWellsSets.allOpenFiles.push({"name":nameOfFile,"session":newSessionDocument});
 
       newName = 'editorTab' + howManyTabs.toString();
@@ -125,16 +133,15 @@
       
       if (howManyTabs > 0) {
         elmt.insertAdjacentHTML("beforeend", h);
-        //zq('inAdj','idEditorTabs',h);//Add the new tab html to the end
+        //cl('inAdj','idEditorTabs',h);//Add the new tab html to the end
       } else {
         elmt.innerHTML = h;
-        //zq('inHtml','idEditorTabs',h);//Replace all html in the tab bar
       }
       
       AlanWells.tabNavgashun({"tabName":newName,"setSession":false});
 
     }catch(e){
-      cl('Error in fnk createNewEditSession',e.message)
+      cl('Error in fnk AlanWells.mkNewSession',e.message)
       
     }
     }
@@ -142,7 +149,7 @@
     window.AlanWells.openNewFile = function(po) {
       var i,izItAlreadyOpen,L;
       
-      cl('po',po)
+      //cl('po',po)
       
       if (!po.fileName) {
         alert('No file name');
@@ -157,7 +164,7 @@
       L = $aWellsSets.allOpenFiles.length;
       
       for (i=0;i<L;i++) {
-        cl('$aWellsSets.allOpenFiles[i].name',$aWellsSets.allOpenFiles[i].name)
+        //cl('$aWellsSets.allOpenFiles[i].name',$aWellsSets.allOpenFiles[i].name)
         
         if ($aWellsSets.allOpenFiles[i].name === po.fileName) {
           izItAlreadyOpen = true;
@@ -175,30 +182,44 @@
       //cl('$aWellsSets',$aWellsSets)
       
       google.script.run
-        .withSuccessHandler (createNewEditSession)
+        .withSuccessHandler (AlanWells.mkNewSession)
         .getTheFileContent(po);//Call the server to get the file content 
     }
     
     window.onload = function () {
-      var editor = ace.edit("editor");
+      window.ACE_edtr = ace.edit($aWellsSets.DOM_Elmt_To_Hold_Editor);
+      var mode = "ace/mode/javascript";
+      var editorCodeContent = "function myFunk() {\n\tvar one = 'two';\n}";
+      
+      var firstSession = ace.createEditSession(editorCodeContent, mode);//Creates a new edit session but doesnt display it in the editor -
+      //Using the createEditSession method of the ace object also associates an undoManager to the session so there is no need to have other
+      //lines for the undo manager
+      
+      window.ACE_edtr.setSession(firstSession);//displays the edit session in the editor
+      
+      window.ACE_edtr.navigateFileEnd();
+      window.ACE_edtr.navigateUp();
+      window.ACE_edtr.navigateLineEnd();
+      
+      window.ACE_edtr.insert('\n\tlet Something = "cool";');//Add something in order to test the undo capability
+      window.ACE_edtr.undo();//Example of the uno method workign
+      window.ACE_edtr.redo();
     }
     
     window.AlanWells.tabNavgashun = function(po) {
-      var dx,sessionToShow;
+      var dx,sessionToShow,thisTab;
       
       /*
         {"tabName":newName,"setSession":false}
       
       */
       
-      cl('po.tabName 174',po.tabName)
+      cl('po.tabName 217',po.tabName)
       
       if (!po.tabName) {
         alert('no tab name');
         return;
       }
-      
-      var editor = ace.edit("editor");
       
       dx = po.tabName.slice(-1);
       cl('dx',dx)
@@ -207,22 +228,62 @@
         sessionToShow = window.$aWellsSets.allOpenFiles[dx].session;
         //add the active class to the new tab and delete from any other tabs
       
-        editor.setSession(sessionToShow);
+        window.ACE_edtr.setSession(sessionToShow);
       }
       
-      return;
+      var tabsParent = document.getElementById('idEditorTabs');
+      var allTabs = tabsParent.querySelectorAll('.w3-bar-item');
+      var L = allTabs.length;
+      //cl('L',L)
       
-      const lastSelectedTab = document.getElementsByClassName('editor-tab--active');
+      let i;
       
-      for (let i = 0; i < lastSelectedTab.length; i += 1) {
-        lastSelectedTab[i].classList.remove('editor-tab--active');
+      for (i = 0; i<L; i++) {
+        thisTab = allTabs[i];
+        //cl('thisTab.className',thisTab.className)
+        
+        thisTab.classList.remove('w3-red');
       }
 
-      const tab = document.getElementsByName(tabName)[0];//There is only one element by this name
-      tab.classList.add('editor-tab--active');
+      const tabSelected = document.getElementsByName(po.tabName)[0];//There is only one element by this name
+      //cl('tabSelected.className',tabSelected.className)
+      tabSelected.classList.add('w3-red');
       
     }
   
+    window.AlanWells.undo = function() {
+      var hazUndoMngr,undoMngr;
+      
+      //cl('undo','ran')
+      
+      undoMngr = window.ACE_edtr.getSession().getUndoManager();
+      hazUndoMngr = undoMngr.hasRedo();
+      
+      //cl('hazUndoMngr',hazUndoMngr)
+      
+      if (!hazUndoMngr) {
+        window.ACE_edtr.undo();
+      } else {
+        undoMngr.undo(false);
+      }
+    }
+
+    window.AlanWells.redo = function() {
+      var hazUndoMngr,undoMngr;
+      
+      //cl('redo','ran')
+      
+      undoMngr = window.ACE_edtr.getSession().getUndoManager();
+      hazUndoMngr = undoMngr.hasRedo();
+      
+      //cl('hazUndoMngr',hazUndoMngr)
+      
+      if (!hazUndoMngr) {
+        window.ACE_edtr.redo();
+      } else {
+        undoMngr.redo(false);
+      }
+    }
   </script>
 </body>
 
