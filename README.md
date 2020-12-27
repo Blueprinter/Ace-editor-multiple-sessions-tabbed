@@ -7,7 +7,7 @@ by using the tabs.
 
 It also manages sessions so that the "undo" and "redo" capability works across all sessions.
 
-This example is set up in a Google Apps Script Web App.
+This example is set up in a Google Apps Script Web App.  But most of the HTML, CSS and JavaScript could be used in any Web App.
 It is a basic example.
 The code editor is started, and then content is loaded into the code editor
 by clicking a button, much the same way that you would load a file into the code editor.
