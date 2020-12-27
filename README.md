@@ -5,6 +5,8 @@ This example shows the Ace code editor being used to load multiple files,
 and create multiple editor sessions that the user can open and close
 by using the tabs.
 
+It also manages sessions so that the "undo" and "redo" capability works across all sessions.
+
 This example is set up in a Google Apps Script Web App.
 It is a basic example.
 The code editor is started, and then content is loaded into the code editor
